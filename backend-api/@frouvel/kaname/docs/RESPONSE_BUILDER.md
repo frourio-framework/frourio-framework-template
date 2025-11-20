@@ -20,7 +20,7 @@ import { z } from 'zod';
 export default defineController(() => ({
   post: ({ body }) =>
     ResponseBuilder.create()
-      .withValidation(
+      .withZodValidation(
         body,
         z.object({
           name: z.string().min(1, '名前は必須です'),
@@ -43,7 +43,7 @@ export default defineController(() => ({
 export default defineController(() => ({
   put: ({ body }) =>
     ResponseBuilder.create()
-      .withValidation(
+      .withZodValidation(
         body,
         z.object({
           age: z.number().positive(),
@@ -71,7 +71,7 @@ export default defineController(() => ({
 
 ```typescript
 ResponseBuilder.create()
-  .withValidation(body, schema)
+  .withZodValidation(body, schema)
   .then((data) => ApiResponse.success(data));
 ```
 
@@ -83,7 +83,7 @@ ResponseBuilder.create()
 export default defineController(() => ({
   post: ({ body }) =>
     ResponseBuilder.create()
-      .withValidation(
+      .withZodValidation(
         body,
         z.object({
           name: z.string(),
@@ -122,7 +122,7 @@ return Validator.validateAndExecute(body, schema, (data) => {
 
 ```typescript
 return ResponseBuilder.create()
-  .withValidation(body, schema)
+  .withZodValidation(body, schema)
   .handle((data) => {
     if (data.age < 18) {
       return ApiResponse.forbidden('18歳未満です');
@@ -144,15 +144,17 @@ return ResponseBuilder.create()
 
 新しいBuilderインスタンスを作成
 
-### `.withValidation(data, schema)`
+### `.withZodValidation(data, schema)`
 
 Zodスキーマでデータをバリデーション
 
 **パラメータ:**
+
 - `data`: バリデーション対象のデータ
 - `schema`: Zodスキーマ
 
 **戻り値:**
+
 - バリデーション済みデータを持つBuilderインスタンス
 
 ### `.handle(handler)`
@@ -160,9 +162,11 @@ Zodスキーマでデータをバリデーション
 バリデーション済みデータでハンドラーを実行
 
 **パラメータ:**
+
 - `handler`: `(data: T) => Response` 形式の関数
 
 **戻り値:**
+
 - ハンドラーの戻り値、またはバリデーションエラー
 
 ### `.then(handler)`
@@ -174,9 +178,11 @@ Zodスキーマでデータをバリデーション
 ハンドラーを実行し、エラーでない場合は自動的に`ApiResponse.success()`でラップ
 
 **パラメータ:**
+
 - `handler`: `(data: T) => any | ApiResponse` 形式の関数
 
 **戻り値:**
+
 - エラーレスポンス、または成功レスポンス
 
 ## エラーハンドリング
@@ -207,7 +213,7 @@ Zodスキーマでデータをバリデーション
 TypeScriptの型推論により、バリデーション後のデータは完全に型安全です:
 
 ```typescript
-.withValidation(
+.withZodValidation(
   body,
   z.object({
     name: z.string(),
@@ -225,6 +231,7 @@ TypeScriptの型推論により、バリデーション後のデータは完全�
 ## ベストプラクティス
 
 1. **スキーマは再利用可能にする**
+
    ```typescript
    const userSchema = z.object({
      name: z.string(),
@@ -232,10 +239,11 @@ TypeScriptの型推論により、バリデーション後のデータは完全�
    });
 
    // 複数の場所で使用
-   ResponseBuilder.create().withValidation(body, userSchema)
+   ResponseBuilder.create().withZodValidation(body, userSchema);
    ```
 
 2. **ビジネスロジックはhandler内で**
+
    ```typescript
    .handle((data) => {
      // ✅ ビジネスロジック
@@ -251,8 +259,8 @@ TypeScriptの型推論により、バリデーション後のデータは完全�
    // ✅ 簡潔で読みやすい
    post: ({ body }) =>
      ResponseBuilder.create()
-       .withValidation(body, schema)
-       .handle((data) => ApiResponse.success(data))
+       .withZodValidation(body, schema)
+       .handle((data) => ApiResponse.success(data));
    ```
 
 ## 実装例

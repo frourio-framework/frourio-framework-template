@@ -2,42 +2,42 @@
  * Configuration Helper Tests
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-
-// Mock the app module before importing config helpers
-vi.mock('$/bootstrap/app', () => {
-  const mockApp = {
-    make: vi.fn((key: string) => {
-      if (key === 'config') {
-        return {
-          app: {
-            name: 'Test App',
-            env: 'test',
-            debug: true,
-            nested: {
-              value: 'deep value',
-            },
-          },
-          database: {
-            connections: {
-              postgresql: {
-                url: 'postgresql://test',
-              },
-            },
-          },
-        };
-      }
-      throw new Error(`Service [${key}] not found in container`);
-    }),
-  };
-  return { default: mockApp };
-});
-
+import { describe, it, expect, beforeEach, beforeAll } from 'vitest';
+import app from '$/bootstrap/app';
 import { config, hasConfig, configAll } from './config';
 
+const mockConfig = {
+  app: {
+    name: 'Test App',
+    env: 'test',
+    debug: true,
+    nested: {
+      value: 'deep value',
+    },
+  },
+  database: {
+    connections: {
+      postgresql: {
+        url: 'postgresql://test',
+      },
+    },
+  },
+  custom: {
+    feature: {
+      enabled: true,
+      limit: 100,
+    },
+  },
+};
+
 describe('Configuration Helper', () => {
+  beforeAll(() => {
+    // Register mock config in the application container for unit tests
+    app.singleton('config', () => mockConfig);
+  });
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    // No-op: placeholder for future per-test setup
   });
 
   describe('config()', () => {
@@ -71,12 +71,29 @@ describe('Configuration Helper', () => {
       expect(typeof debug).toBe('boolean');
       expect(debug).toBe(true);
     });
+
+    it('should handle number types', () => {
+      const limit = config<number>('custom.feature.limit');
+      expect(typeof limit).toBe('number');
+      expect(limit).toBe(100);
+    });
+
+    it('should handle object types', () => {
+      const feature = config<{ enabled: boolean; limit: number }>(
+        'custom.feature',
+      );
+      expect(feature).toEqual({
+        enabled: true,
+        limit: 100,
+      });
+    });
   });
 
   describe('hasConfig()', () => {
     it('should return true for existing config', () => {
       expect(hasConfig('app.name')).toBe(true);
       expect(hasConfig('database.connections.postgresql.url')).toBe(true);
+      expect(hasConfig('custom.feature.enabled')).toBe(true);
     });
 
     it('should return false for non-existing config', () => {
@@ -98,9 +115,62 @@ describe('Configuration Helper', () => {
       });
     });
 
+    it('should get all config for database file', () => {
+      const dbConfig = configAll('database');
+      expect(dbConfig).toEqual({
+        connections: {
+          postgresql: {
+            url: 'postgresql://test',
+          },
+        },
+      });
+    });
+
+    it('should get all config for custom file', () => {
+      const customConfig = configAll('custom');
+      expect(customConfig).toEqual({
+        feature: {
+          enabled: true,
+          limit: 100,
+        },
+      });
+    });
+
     it('should return undefined for non-existent file', () => {
-      const config = configAll('nonexistent');
+      const config = configAll('nonexistent' as any);
       expect(config).toBeUndefined();
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle empty string config key', () => {
+      const value = config('', 'default');
+      expect(value).toBe('default');
+    });
+
+    it('should handle config key with trailing dots', () => {
+      const value = config('app.name.', 'default');
+      expect(value).toBe('default');
+    });
+
+    it('should handle config key with leading dots', () => {
+      const value = config('.app.name', 'default');
+      expect(value).toBe('default');
+    });
+
+    it('should handle null as default value', () => {
+      const value = config('non.existent', null);
+      expect(value).toBeNull();
+    });
+
+    it('should handle boolean false as default value', () => {
+      const value = config('non.existent', false);
+      expect(value).toBe(false);
+    });
+
+    it('should handle zero as default value', () => {
+      const value = config('non.existent', 0);
+      expect(value).toBe(0);
     });
   });
 });

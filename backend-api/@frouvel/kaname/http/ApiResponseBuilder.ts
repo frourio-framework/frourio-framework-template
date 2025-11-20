@@ -25,7 +25,7 @@ type ApiResponseFunctions =
 /**
  * Response Builder for fluent API
  */
-export class ResponseBuilder<T = unknown> {
+export class ApiResponseBuilder<T = unknown> {
   private validatedData: T | null = null;
   private validationError: ReturnType<typeof ApiResponse.badRequest> | null =
     null;
@@ -33,10 +33,10 @@ export class ResponseBuilder<T = unknown> {
   private constructor() {}
 
   /**
-   * Create a new ResponseBuilder instance
+   * Create a new ApiResponseBuilder instance
    */
   static create() {
-    return new ResponseBuilder();
+    return new ApiResponseBuilder();
   }
 
   /**
@@ -44,21 +44,21 @@ export class ResponseBuilder<T = unknown> {
    *
    * @example
    * ```typescript
-   * return ResponseBuilder.create()
-   *   .withValidation(body, userSchema)
+   * return ApiResponseBuilder.create()
+   *   .withZodValidation(body, userSchema)
    *   .handle((data) => {
    *     if (data.age < 18) return ApiResponse.forbidden('未成年は登録できません');
    *     return ApiResponse.success(data);
    *   });
    * ```
    */
-  withValidation<S extends z.ZodType>(
+  withZodValidation<S extends z.ZodType>(
     data: unknown,
     schema: S,
-  ): ResponseBuilder<z.infer<S>> {
+  ): ApiResponseBuilder<z.infer<S>> {
     const result = Validator.validate(data, schema);
 
-    const builder = new ResponseBuilder<z.infer<S>>();
+    const builder = new ApiResponseBuilder<z.infer<S>>();
 
     if (result.isError) {
       builder.validationError = result.response;

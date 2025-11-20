@@ -7,7 +7,7 @@
 import { defineController } from './$relay';
 import {
   ApiResponse,
-  ResponseBuilder,
+  ApiResponseBuilder,
 } from '$/@frouvel/kaname/http/ApiResponse';
 import {
   NotFoundError,
@@ -97,12 +97,12 @@ export default defineController(() => ({
     }
   },
 
-  // Example: Using ResponseBuilder with .handle() - Clean validation
+  // Example: Using ApiResponseBuilder with .handle() - Clean validation
   // Separates schema validation from business logic
   // Perfect for one-liner controller actions with complex validation
   patch: ({ body }) =>
-    ResponseBuilder.create()
-      .withValidation(
+    ApiResponseBuilder.create()
+      .withZodValidation(
         body,
         z.object({
           name: z.string().min(1, '名前は必須です'),
@@ -136,17 +136,17 @@ export default defineController(() => ({
 
         // Success response
         return ApiResponse.success({
-          message: 'データが正常に更新されました (ResponseBuilder)',
+          message: 'データが正常に更新されました (ApiResponseBuilder)',
           data,
         });
       }),
 
-  // Example: Alternative ResponseBuilder syntax with .then() alias
+  // Example: Alternative ApiResponseBuilder syntax with .then() alias
   // .then() is just an alias for .handle() - same functionality
   // Use whichever reads better in your context
   options: ({ body }) =>
-    ResponseBuilder.create()
-      .withValidation(
+    ApiResponseBuilder.create()
+      .withZodValidation(
         body,
         z.object({
           name: z.string().min(1, '名前は必須です'),

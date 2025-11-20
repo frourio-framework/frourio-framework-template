@@ -37,10 +37,10 @@ export function demonstrateConfigUsage() {
   );
 
   console.log(
-    `   Function: config('database.pool.max'): ${config('database.pool.max')}`,
+    `   Function: config('database.connections.default.pool.max'): ${config('database.connections.default.pool.max')}`,
   );
   console.log(
-    `   Property: configObject.database.pool.max: ${configObject.database.pool.max}`,
+    `   Property: configObject.database.connections.default.pool.max: ${configObject.database.connections.default.pool?.max}`,
   );
 
   // Example 4: Default values (function only)
@@ -56,7 +56,7 @@ export function demonstrateConfigUsage() {
   const debug: boolean = configObject.app.debug;
   console.log(`   Debug mode (boolean): ${debug}`);
 
-  const poolMax: number = configObject.database.pool.max;
+  const poolMax: number | undefined = configObject.database.connections.default.pool?.max;
   console.log(`   DB Pool Max (number): ${poolMax}`);
 
   const jwtAlgorithm: 'HS256' = configObject.jwt.algorithm;

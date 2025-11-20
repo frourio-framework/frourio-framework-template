@@ -216,5 +216,4 @@ const value = config('key');
 ## See Also
 
 - [Configuration Files Documentation](../../../config/README.md)
-- [Environment Variables](../env/README.md)
 - [Application Container](../foundation/README.md)

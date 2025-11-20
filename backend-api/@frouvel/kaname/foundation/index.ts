@@ -26,3 +26,5 @@ export {
   DatabaseServiceProvider,
   SwaggerServiceProvider,
 } from './providers';
+
+export { getApp, getPrisma } from './helpers';

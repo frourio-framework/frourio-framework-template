@@ -4,6 +4,18 @@ Core framework modules for frourio-framework, inspired by Laravel's Illuminate n
 
 ## Modules
 
+### Testing (`@frouvel/kaname/testing`)
+
+Comprehensive testing utilities including:
+- **Test Case Classes**: `TestCase`, `TestCaseDatabase`, `TestCaseIntegration`
+- **Factory Pattern**: Generate test data with `Factory` and `fake` helpers
+- **API Client**: Fluent HTTP request interface for integration tests
+- **Assertions**: Rich assertion helpers for API responses
+
+[📖 Testing Documentation](./testing/README.md)
+
+## Modules
+
 ### Console
 
 PHP Artisan-like command line interface for managing your application.

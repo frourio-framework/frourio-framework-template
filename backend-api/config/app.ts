@@ -5,25 +5,32 @@
  */
 
 import { z } from 'zod';
+import { defineConfig, type ConfigType } from '$/@frouvel/kaname/config';
+import { env } from '../env';
 
-export const appConfigSchema = z.object({
-  name: z.string(),
-  env: z.enum(['development', 'production', 'test']),
-  debug: z.boolean(),
-  url: z.string().url(),
-  timezone: z.string(),
-  locale: z.string(),
-  fallbackLocale: z.string(),
+const appConfig = defineConfig({
+  schema: z.object({
+    name: z.string(),
+    env: z.enum(['development', 'production', 'test']),
+    debug: z.boolean(),
+    url: z.string().url(),
+    timezone: z.string(),
+    locale: z.string(),
+    fallbackLocale: z.string(),
+    apiBasePath: z.string().default(''),
+  }),
+  load: () => ({
+    name: env.APP_NAME,
+    env: env.NODE_ENV,
+    debug: env.APP_DEBUG,
+    url: env.APP_URL,
+    timezone: env.TZ,
+    locale: env.APP_LOCALE,
+    fallbackLocale: env.APP_FALLBACK_LOCALE,
+    apiBasePath: env.API_BASE_PATH,
+  }),
 });
 
-export type AppConfig = z.infer<typeof appConfigSchema>;
-
-export default appConfigSchema.parse({
-  name: process.env.APP_NAME || 'Frourio Framework',
-  env: process.env.NODE_ENV || 'development',
-  debug: String(process.env.APP_DEBUG) === 'true',
-  url: process.env.APP_URL || 'http://localhost:8080',
-  timezone: process.env.TZ || 'UTC',
-  locale: process.env.APP_LOCALE || 'en',
-  fallbackLocale: process.env.APP_FALLBACK_LOCALE || 'en',
-});
+export type AppConfig = ConfigType<typeof appConfig>;
+export const appConfigSchema = appConfig.schema;
+export default appConfig;

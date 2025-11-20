@@ -15,6 +15,25 @@ import type {
 import { DEFAULT_PROBLEM_TYPE } from './type/nfc9457';
 import { AbstractFrourioFrameworkError } from '../error/FrourioFrameworkError';
 
+// Align with Frourio's generated HttpStatusNoOk union in $server.ts
+type HttpStatusNoOk =
+  | 301
+  | 302
+  | 400
+  | 401
+  | 402
+  | 403
+  | 404
+  | 405
+  | 406
+  | 409
+  | 500
+  | 501
+  | 502
+  | 503
+  | 504
+  | 505;
+
 // ============================================================================
 // Core Response Helpers
 // ============================================================================
@@ -91,12 +110,16 @@ const returnSuccess = <T>(val: T) => ({
  * Return RFC9457-compliant error response
  * @internal
  */
-function returnProblemDetails(error: unknown, defaultStatus: number = 500) {
+function returnProblemDetails(
+  error: unknown,
+  defaultStatus: HttpStatusNoOk = 500,
+) {
   const problemDetails = errorToProblemDetails(error);
-  const status = problemDetails.status || defaultStatus;
+  const status =
+    (problemDetails.status as HttpStatusNoOk | undefined) ?? defaultStatus;
 
   return {
-    status: status as any,
+    status,
     body: problemDetails,
   };
 }
@@ -365,8 +388,10 @@ export const ApiResponse = {
   },
 } as const;
 
-// Export ResponseBuilder
-export { ResponseBuilder } from './ResponseBuilder';
+// Export ApiResponseBuilder
+export { ApiResponseBuilder } from './ApiResponseBuilder';
+// Keep ResponseBuilder as deprecated alias for backward compatibility
+export { ApiResponseBuilder as ResponseBuilder } from './ApiResponseBuilder';
 
 // Export types
 export type {

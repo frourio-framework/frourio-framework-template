@@ -1,53 +1,49 @@
-/**
- * Database Configuration
- *
- * Configuration for database connections.
- */
-
 import { z } from 'zod';
+import { defineConfig, type ConfigType } from '$/@frouvel/kaname/config';
+import { env } from '../env';
 
-export const databaseConfigSchema = z.object({
-  default: z.string(),
-  connections: z.object({
-    postgresql: z.object({
-      url: z.string().url(),
-      schema: z.string(),
-    }),
+const databaseConfig = defineConfig({
+  schema: z.object({
+    default: z.string(),
+    connections: z.record(
+      z.object({
+        driver: z.string(),
+        url: z.string().optional(),
+        connection: z
+          .object({
+            host: z.string(),
+            port: z.number(),
+            user: z.string(),
+            password: z.string(),
+            database: z.string(),
+          })
+          .optional(),
+        pool: z
+          .object({
+            min: z.number().optional(),
+            max: z.number().optional(),
+            idleTimeoutMillis: z.number().optional(),
+          })
+          .optional(),
+      }),
+    ),
   }),
-  pool: z.object({
-    min: z.number().positive(),
-    max: z.number().positive(),
-  }),
-  migrations: z.object({
-    tableName: z.string(),
-    directory: z.string(),
-  }),
-  seeds: z.object({
-    directory: z.string(),
-  }),
-});
-
-export type DatabaseConfig = z.infer<typeof databaseConfigSchema>;
-
-export default databaseConfigSchema.parse({
-  default: process.env.DB_CONNECTION || 'postgresql',
-  connections: {
-    postgresql: {
-      url:
-        process.env.DATABASE_URL ||
-        'postgresql://root:root@localhost:5432/frourio_framework',
-      schema: process.env.DB_SCHEMA || 'public',
+  load: () => ({
+    default: 'default',
+    connections: {
+      default: {
+        driver: 'prisma',
+        url: env.DATABASE_URL,
+        pool: {
+          min: env.DB_POOL_MIN,
+          max: env.DB_POOL_MAX,
+        },
+      },
+      // Add additional connections here (e.g., read replicas or Drizzle)
     },
-  },
-  pool: {
-    min: Number(process.env.DB_POOL_MIN || 2),
-    max: Number(process.env.DB_POOL_MAX || 10),
-  },
-  migrations: {
-    tableName: process.env.DB_MIGRATIONS_TABLE || 'migrations',
-    directory: './prisma/migrations',
-  },
-  seeds: {
-    directory: './prisma/seeders',
-  },
+  }),
 });
+
+export type DatabaseConfig = ConfigType<typeof databaseConfig>;
+export const databaseConfigSchema = databaseConfig.schema;
+export default databaseConfig;

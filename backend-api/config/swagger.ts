@@ -5,25 +5,8 @@
  */
 
 import { z } from 'zod';
-
-const swaggerConfigSchema = z.object({
-  enabled: z.boolean(),
-  path: z.string(),
-  title: z.string(),
-  version: z.string(),
-  description: z.string().optional(),
-  servers: z
-    .array(
-      z.object({
-        url: z.string(),
-        description: z.string().optional(),
-      }),
-    )
-    .optional(),
-  tagDescriptions: z.record(z.string(), z.string()).optional(),
-});
-
-export type SwaggerConfig = z.infer<typeof swaggerConfigSchema>;
+import { defineConfig, type ConfigType } from '$/@frouvel/kaname/config';
+import { env } from '../env';
 
 /**
  * Tag descriptions for API grouping
@@ -37,24 +20,46 @@ const tagDescriptions: Record<string, string> = {
   Example: 'Example endpoints for testing',
 };
 
-const isEnabled = (() => {
-  if (process.env.SWAGGER_ENABLED !== undefined) {
-    return String(process.env.SWAGGER_ENABLED).toLowerCase() === 'true';
-  }
-  return process.env.NODE_ENV !== 'production';
-})();
+const swaggerConfig = defineConfig({
+  schema: z.object({
+    enabled: z.boolean(),
+    path: z.string(),
+    title: z.string(),
+    version: z.string(),
+    description: z.string().optional(),
+    servers: z
+      .array(
+        z.object({
+          url: z.string(),
+          description: z.string().optional(),
+        }),
+      )
+      .optional(),
+    tagDescriptions: z.record(z.string(), z.string()).optional(),
+  }),
+  load: () => {
+    const enabled =
+      env.SWAGGER_ENABLED !== undefined
+        ? env.SWAGGER_ENABLED
+        : env.NODE_ENV !== 'production';
 
-export default swaggerConfigSchema.parse({
-  enabled: isEnabled,
-  path: process.env.SWAGGER_PATH || '/api-docs',
-  title: process.env.SWAGGER_TITLE || process.env.APP_NAME || 'API',
-  version: process.env.SWAGGER_VERSION || '1.0.0',
-  description: process.env.SWAGGER_DESCRIPTION || 'API Documentation',
-  servers: [
-    {
-      url: process.env.APP_URL || 'http://localhost:31577',
-      description: process.env.NODE_ENV === 'production' ? 'Production' : 'Development',
-    },
-  ],
-  tagDescriptions,
+    return {
+      enabled,
+      path: env.SWAGGER_PATH || '/api-docs',
+      title: env.SWAGGER_TITLE || env.APP_NAME || 'API',
+      version: env.SWAGGER_VERSION || '1.0.0',
+      description: env.SWAGGER_DESCRIPTION || 'API Documentation',
+      servers: [
+        {
+          url: env.APP_URL,
+          description: env.NODE_ENV === 'production' ? 'Production' : 'Development',
+        },
+      ],
+      tagDescriptions,
+    };
+  },
 });
+
+export type SwaggerConfig = ConfigType<typeof swaggerConfig>;
+export const swaggerConfigSchema = swaggerConfig.schema;
+export default swaggerConfig;

@@ -109,22 +109,25 @@ export class MyCommand extends Command {
 
 ### 2. Register Your Command
 
-Register the command in [`ConsoleServiceProvider`](../../../bootstrap/providers/ConsoleServiceProvider.ts):
+Register the command in [`AppServiceProvider`](../../../app/providers/AppServiceProvider.ts):
 
 ```typescript
 import type { Application, ServiceProvider } from '$/@frouvel/kaname/foundation';
 import type { ConsoleKernel } from '$/@frouvel/kaname/foundation';
-import { MyCommand } from '$/path/to/MyCommand';
+import { MyCommand } from '$/app/console/MyCommand';
 
-export class ConsoleServiceProvider implements ServiceProvider {
-  register(_app: Application): void {}
+export class AppServiceProvider implements ServiceProvider {
+  register(_app: Application): void {
+    // Register application services here
+  }
 
   async boot(app: Application): Promise<void> {
     const kernel = app.make<ConsoleKernel>('ConsoleKernel');
     
+    // Register your custom commands here
     kernel.registerCommands([
       new MyCommand(app),
-      // ... other commands
+      // Add more commands here
     ]);
   }
 }

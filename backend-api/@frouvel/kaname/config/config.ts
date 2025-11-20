@@ -9,6 +9,37 @@ import app from '$/bootstrap/app';
 import type { Config, ConfigPaths } from '$/config/$types';
 
 /**
+ * Build a dot-notation key union from the Config type for autocomplete and inference.
+ */
+type DotPrefix<T extends string> = T extends '' ? '' : `.${T}`;
+type PrevDepth = [never, 0, 1, 2, 3, 4];
+type NestedPaths<T, Depth extends number = 4> = Depth extends 0
+  ? ''
+  : T extends readonly any[]
+    ? '' // stop at arrays to avoid prototype keys like 'length'
+    : T extends object
+      ? {
+          [K in Extract<keyof T, string>]: `${K}${DotPrefix<NestedPaths<
+            T[K],
+            PrevDepth[Depth]
+          >>}`;
+        }[Extract<keyof T, string>]
+      : '';
+
+export type ConfigPath = NestedPaths<Config>;
+
+/**
+ * Resolve the value type at a given dot-notation path.
+ */
+type PathValue<T, P extends string> = P extends `${infer K}.${infer Rest}`
+  ? K extends keyof T
+    ? PathValue<T[K], Rest>
+    : never
+  : P extends keyof T
+    ? T[P]
+    : never;
+
+/**
  * Get a configuration value using dot notation with autocomplete
  *
  * @example
@@ -17,10 +48,15 @@ import type { Config, ConfigPaths } from '$/config/$types';
  * config('database.pool.max') // type: any
  * config('non.existent.key', 'default') // Returns 'default'
  */
-export function config<T = any>(
+export function config<P extends ConfigPath, D = undefined>(
+  key: P,
+  defaultValue?: D,
+): PathValue<Config, P> | D;
+export function config<T = any>(key: ConfigPaths | string, defaultValue?: T): T;
+export function config(
   key: ConfigPaths | string,
-  defaultValue?: T,
-): T {
+  defaultValue?: unknown,
+): unknown {
   const configs = app.make<Record<string, any>>('config');
 
   const keys = (key as string).split('.');
@@ -30,11 +66,11 @@ export function config<T = any>(
     if (value && typeof value === 'object' && k in value) {
       value = value[k];
     } else {
-      return defaultValue as T;
+      return defaultValue;
     }
   }
 
-  return value as T;
+  return value;
 }
 
 /**

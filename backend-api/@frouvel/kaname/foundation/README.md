@@ -32,11 +32,15 @@ bootstrap/app.ts creates Application → Kernel bootstraps → Request/Command h
 └── README.md                  # This file
 
 Application-specific:
-backend-api/bootstrap/
-├── app.ts                     # Application entry point
-├── providers/                 # Application-specific providers
-│   └── DatabaseServiceProvider.ts
-└── cache/                     # Bootstrap cache files
+backend-api/
+├── @frouvel/kaname/foundation/providers/  # Framework providers
+│   ├── DatabaseServiceProvider.ts
+│   └── ConsoleServiceProvider.ts
+├── app/providers/             # Application providers
+│   └── AppServiceProvider.ts
+└── bootstrap/
+    ├── app.ts                 # Application entry point
+    └── cache/                 # Bootstrap cache files
 ```
 
 ## Bootstrap Flow
@@ -101,11 +105,13 @@ The Application class provides an IoC (Inversion of Control) container for depen
 ### Binding Services
 
 ```typescript
+import { getPrismaClient } from '$/@frouvel/kaname/database';
+
 // Bind a service (creates new instance each time)
 app.bind('myService', () => new MyService());
 
 // Bind a singleton (same instance every time)
-app.singleton('database', () => getPrismaClient());
+app.singleton('prisma', () => getPrismaClient());
 ```
 
 ### Resolving Services
@@ -149,13 +155,20 @@ Register your provider in your application's bootstrap file:
 
 ```typescript
 // bootstrap/app.ts
-import { DatabaseServiceProvider } from './providers/DatabaseServiceProvider';
-import { MyServiceProvider } from './providers/MyServiceProvider';
+import {
+  DatabaseServiceProvider,
+  ConsoleServiceProvider,
+} from '$/@frouvel/kaname/foundation';
+import { AppServiceProvider } from '$/app/providers/AppServiceProvider';
 
 // After creating the application
 const providers = [
+  // Framework providers
   DatabaseServiceProvider,
-  MyServiceProvider,
+  ConsoleServiceProvider,
+  
+  // Application providers
+  AppServiceProvider,
 ];
 
 providers.forEach(Provider => {
@@ -171,7 +184,7 @@ For improved performance in production, you can cache your configuration:
 ### Cache Configuration
 
 ```bash
-npm run cli config:cache
+npm run artisan config:cache
 ```
 
 This creates `bootstrap/cache/config.cache.json` which is automatically loaded in production.
@@ -179,7 +192,7 @@ This creates `bootstrap/cache/config.cache.json` which is automatically loaded i
 ### Clear Configuration Cache
 
 ```bash
-npm run cli config:clear
+npm run artisan config:clear
 ```
 
 ## Creating Custom Bootstrappers
@@ -249,8 +262,8 @@ app.bootstrapPath();    // /path/to/backend-api/bootstrap/cache
 | `App\Http\Kernel` | `@frouvel/kaname/foundation/HttpKernel` |
 | `App\Console\Kernel` | `@frouvel/kaname/foundation/ConsoleKernel` |
 | `ServiceProvider` | `@frouvel/kaname/foundation/ServiceProvider` |
-| `php artisan config:cache` | `npm run cli config:cache` |
-| `php artisan config:clear` | `npm run cli config:clear` |
+| `php artisan config:cache` | `npm run artisan config:cache` |
+| `php artisan config:clear` | `npm run artisan config:clear` |
 
 ## Example: Full Application Lifecycle
 

@@ -14,7 +14,7 @@ export default defineConfig({
     env: {
       DATABASE_URL: process.env.TEST_DATABASE_URL ?? '',
     },
-    setupFiles: ['tests/setup.ts'],
+    setupFiles: ['@frouvel/kaname/testing/setup.ts'],
     includeSource: ['**/*.ts'],
     hookTimeout: 100000,
     testTimeout: 10000,

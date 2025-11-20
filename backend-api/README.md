@@ -41,6 +41,7 @@ npm run dev
 ```
 
 This will start:
+
 - 📦 Build watcher
 - 🏃 Application server
 - 🏰 Frourio code generator
@@ -63,16 +64,18 @@ npm run artisan --help
 npm run artisan <command> --help
 
 # Built-in commands
-npm run artisan inspire                    # Display an inspiring quote
-npm run artisan config:cache               # Cache configuration
-npm run artisan config:clear               # Clear configuration cache
-npm run artisan generate:config-types      # Generate type-safe config types
-npm run artisan greet "John" --title "Dr." # Greet command example
+npm run artisan inspire                     # Display an inspiring quote
+npm run artisan tinker                      # Interactive REPL with app context
+npm run artisan config:cache                # Cache configuration
+npm run artisan config:clear                # Clear configuration cache
+npm run artisan generate:config-types       # Generate type-safe config types
+npm run artisan greet "John" --title "Dr."  # Greet command example
 
 # OpenAPI/Swagger commands
 npm run artisan openapi:generate           # Generate OpenAPI spec file (YAML)
 npm run artisan openapi:generate -f json   # Generate as JSON
 npm run artisan openapi:generate -o ./openapi.yaml  # Custom output path
+
 ```
 
 ### Creating Custom Commands
@@ -99,12 +102,18 @@ export class MyCommand extends Command {
 }
 ```
 
-Register in `bootstrap/providers/ConsoleServiceProvider.ts`:
+Register in `app/providers/AppServiceProvider.ts`:
 
 ```typescript
-kernel.registerCommands([
-  new MyCommand(app),
-]);
+// In the boot() method
+async boot(app: Application): Promise<void> {
+  const kernel = app.make<ConsoleKernel>('ConsoleKernel');
+
+  kernel.registerCommands([
+    new MyCommand(app),
+    // Add more custom commands here
+  ]);
+}
 ```
 
 ## Scripts
@@ -119,10 +128,11 @@ kernel.registerCommands([
 ### Building
 
 - `npm run build` - Build for production
-- `npm run generate` - Generate Aspida, Frourio, and Prisma types
+- `npm run generate` - Generate Aspida, Frourio, Prisma, and config types
 - `npm run generate:aspida` - Generate Aspida types
 - `npm run generate:frourio` - Generate Frourio files
 - `npm run generate:prisma` - Generate Prisma client
+- `npm run generate:config` - Generate type-safe configuration types
 
 ### Database
 
@@ -151,7 +161,6 @@ kernel.registerCommands([
 ### Utility
 
 - `npm run tsx` - Run TypeScript files with tsx
-- `npm run cli` - Run the legacy CLI (deprecated, use artisan instead)
 
 ## Project Structure
 
@@ -242,11 +251,57 @@ export default defineController(() => ({
 
 ## Testing
 
-```bash
-npm run test
+The project includes a comprehensive testing framework at `@frouvel/kaname/testing`.
+
+### Quick Start
+
+```typescript
+import { TestCaseIntegration } from '$/@frouvel/kaname/testing';
+import { expect } from 'vitest';
+
+class MyTest extends TestCaseIntegration {
+  run() {
+    this.suite('My Test Suite', () => {
+      this.test('my test', async () => {
+        const response = await this.get('/api/health');
+        this.assertOk(response);
+      });
+    });
+  }
+}
+
+new MyTest().run();
 ```
 
-Tests are written using Vitest.
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run specific test file
+npm test tests/integration/users.integration.test.ts
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Run tests with coverage
+npm test -- --coverage
+```
+
+### Features
+
+- **Test Case Classes**: `TestCase`, `TestCaseDatabase`, `TestCaseIntegration`
+- **Factory Pattern**: Generate test data with `Factory` and `fake` helpers
+- **API Client**: Fluent HTTP request interface
+- **Automatic Setup**: Database migrations, seeding, and cleanup
+- **Rich Assertions**: Expressive assertion helpers
+
+### Documentation
+
+- [Testing Framework Documentation](@frouvel/kaname/testing/README.md)
+- [Migration Guide](@frouvel/kaname/testing/MIGRATION_GUIDE.md)
+- [Example Tests](tests/integration/)
 
 ## Environment Variables
 
@@ -297,12 +352,14 @@ SWAGGER_VERSION=1.0.0
 ```
 
 For detailed documentation, see:
+
 - [Swagger Module README](@frouvel/kaname/swagger/README.md)
 - [Usage Guide](@frouvel/kaname/swagger/USAGE_GUIDE.md)
 
 ## Documentation
 
 - [Artisan Console](@frouvel/kaname/console/README.md)
+- [Testing Framework](@frouvel/kaname/testing/README.md)
 - [Swagger/OpenAPI](@frouvel/kaname/swagger/README.md)
 - [RFC9457 Error Handling](docs/RFC9457_ERROR_HANDLING.md)
 - [Response Builder](docs/RESPONSE_BUILDER.md)

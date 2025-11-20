@@ -5,8 +5,8 @@ Quick reference for using RFC9457-compliant error handling in controllers.
 ## TL;DR
 
 ```typescript
-import { returnSuccess, returnGetError, returnNotFound } from '$/app/http/response';
-import { NotFoundError } from '$/app/error/CommonErrors';
+import { ApiResponse } from '$/@frouvel/kaname/http/ApiResponse';
+import { NotFoundError } from '$/@frouvel/kaname/error/CommonErrors';
 
 export default defineController(() => ({
   get: ({ params }) => {
@@ -15,9 +15,9 @@ export default defineController(() => ({
       if (!item) {
         throw NotFoundError.create(`Item ${params.id} not found`, { itemId: params.id });
       }
-      return returnSuccess(item);
+      return ApiResponse.success(item);
     } catch (error) {
-      return returnGetError(error);
+      return ApiResponse.method.get(error);
     }
   },
 }));
@@ -25,22 +25,28 @@ export default defineController(() => ({
 
 ## Quick Reference
 
-### Import Response Helpers
+### Import ApiResponse Facade
 
 ```typescript
-import {
-  returnSuccess,           // For successful responses
-  returnGetError,          // For GET errors (default: 404)
-  returnPostError,         // For POST errors (default: 500)
-  returnPutError,          // For PUT errors (default: 500)
-  returnPatchError,        // For PATCH errors (default: 403)
-  returnDeleteError,       // For DELETE errors (default: 500)
-  returnNotFound,          // For 404 errors
-  returnBadRequest,        // For 400 errors
-  returnUnauthorized,      // For 401 errors
-  returnForbidden,         // For 403 errors
-  returnConflict,          // For 409 errors
-} from '$/app/http/response';
+import { ApiResponse } from '$/@frouvel/kaname/http/ApiResponse';
+
+// Success response
+ApiResponse.success(data);
+
+// Method-specific error handlers (auto-detect status from error type)
+ApiResponse.method.get(error);      // Default: 404
+ApiResponse.method.post(error);     // Default: 500
+ApiResponse.method.put(error);      // Default: 500
+ApiResponse.method.patch(error);    // Default: 403
+ApiResponse.method.delete(error);   // Default: 500
+
+// Specific status code methods
+ApiResponse.notFound(detail, extensions?);          // 404
+ApiResponse.badRequest(detail, extensions?);        // 400
+ApiResponse.unauthorized(detail, extensions?);      // 401
+ApiResponse.forbidden(detail, extensions?);         // 403
+ApiResponse.conflict(detail, extensions?);          // 409
+ApiResponse.internalServerError(detail, extensions?); // 500
 ```
 
 ### Import Error Classes
@@ -53,19 +59,19 @@ import {
   ForbiddenError,
   BadRequestError,
   InternalServerError,
-} from '$/app/error/CommonErrors';
+} from '$/@frouvel/kaname/error/CommonErrors';
 ```
 
 ## Common Patterns
 
-### Pattern 1: Direct Return with Helper
+### Pattern 1: Direct Return with ApiResponse
 
 ```typescript
 post: ({ body }) => {
   if (!body.email) {
-    return returnBadRequest('Email is required', { field: 'email' });
+    return ApiResponse.badRequest('Email is required', { field: 'email' });
   }
-  return returnSuccess({ created: true });
+  return ApiResponse.success({ created: true });
 },
 ```
 
@@ -78,9 +84,9 @@ get: ({ params }) => {
     if (!user) {
       throw NotFoundError.create(`User ${params.id} not found`, { userId: params.id });
     }
-    return returnSuccess(user);
+    return ApiResponse.success(user);
   } catch (error) {
-    return returnGetError(error);
+    return ApiResponse.method.get(error);
   }
 },
 ```
@@ -91,8 +97,8 @@ get: ({ params }) => {
 post: ({ body }) =>
   CreateUserUseCase.create()
     .handle({ email: body.email })
-    .then(returnSuccess)
-    .catch(returnPostError),
+    .then(ApiResponse.success)
+    .catch(ApiResponse.method.post),
 ```
 
 ## Response Format
@@ -121,7 +127,7 @@ Content-Type: application/problem+json
 ## Type Definitions
 
 ```typescript
-import type { ProblemDetails } from '$/app/http/rfc9457.types';
+import type { ProblemDetails } from 'commonTypesWithClient';
 
 export type Methods = DefineMethods<{
   get: {

@@ -39,19 +39,13 @@ Additional fields can be added for context:
 
 ## Basic Usage
 
-### 1. Using Response Helpers
+### 1. Using ApiResponse Facade
 
 The simplest way to return RFC9457-compliant errors:
 
 ```typescript
 import { defineController } from './$relay';
-import {
-  returnSuccess,
-  returnGetError,
-  returnPostError,
-  returnNotFound,
-  returnBadRequest,
-} from '$/app/http/response';
+import { ApiResponse } from '$/@frouvel/kaname/http/ApiResponse';
 
 export default defineController(() => ({
   get: ({ params }) => {
@@ -59,29 +53,29 @@ export default defineController(() => ({
       const user = findUser(params.id);
       
       if (!user) {
-        return returnNotFound(`User with ID ${params.id} not found`, {
+        return ApiResponse.notFound(`User with ID ${params.id} not found`, {
           userId: params.id,
         });
       }
       
-      return returnSuccess(user);
+      return ApiResponse.success(user);
     } catch (error) {
-      return returnGetError(error);
+      return ApiResponse.method.get(error);
     }
   },
   
   post: ({ body }) => {
     try {
       if (!body.email) {
-        return returnBadRequest('Email is required', {
+        return ApiResponse.badRequest('Email is required', {
           field: 'email',
         });
       }
       
       const user = createUser(body);
-      return returnSuccess(user);
+      return ApiResponse.success(user);
     } catch (error) {
-      return returnPostError(error);
+      return ApiResponse.method.post(error);
     }
   },
 }));
@@ -92,8 +86,8 @@ export default defineController(() => ({
 Create specific error types for your domain:
 
 ```typescript
-import { NotFoundError, ValidationError } from '$/app/error/CommonErrors';
-import { returnGetError } from '$/app/http/response';
+import { NotFoundError, ValidationError } from '$/@frouvel/kaname/error/CommonErrors';
+import { ApiResponse } from '$/@frouvel/kaname/http/ApiResponse';
 
 export default defineController(() => ({
   get: ({ params }) => {
@@ -107,9 +101,9 @@ export default defineController(() => ({
         });
       }
       
-      return returnSuccess(user);
+      return ApiResponse.success(user);
     } catch (error) {
-      return returnGetError(error);
+      return ApiResponse.method.get(error);
     }
   },
 }));
@@ -120,7 +114,7 @@ export default defineController(() => ({
 Extend `AbstractFrourioFrameworkError` for domain-specific errors:
 
 ```typescript
-import { AbstractFrourioFrameworkError } from '$/app/error/FrourioFrameworkError';
+import { AbstractFrourioFrameworkError } from '$/@frouvel/kaname/error/FrourioFrameworkError';
 
 export class UserAlreadyExistsError extends AbstractFrourioFrameworkError {
   constructor(args: {
@@ -153,42 +147,44 @@ export default defineController(() => ({
       }
       
       const user = createUser(body);
-      return returnSuccess(user);
+      return ApiResponse.success(user);
     } catch (error) {
-      return returnPostError(error);
+      return ApiResponse.method.post(error);
     }
   },
 }));
 ```
 
-## Available Response Helpers
+## ApiResponse Facade Methods
 
-### Generic Helpers
+### Method-Specific Error Handlers
 
 ```typescript
+import { ApiResponse } from '$/@frouvel/kaname/http/ApiResponse';
+
 // Automatically determines status from error type
-returnGetError(error)      // Default: 404
-returnPostError(error)     // Default: 500
-returnPutError(error)      // Default: 500
-returnPatchError(error)    // Default: 403
-returnDeleteError(error)   // Default: 500
+ApiResponse.method.get(error);      // Default: 404
+ApiResponse.method.post(error);     // Default: 500
+ApiResponse.method.put(error);      // Default: 500
+ApiResponse.method.patch(error);    // Default: 403
+ApiResponse.method.delete(error);   // Default: 500
 ```
 
-### Specific Status Code Helpers
+### Specific Status Code Methods
 
 ```typescript
-returnBadRequest(detail, extensions?)      // 400
-returnUnauthorized(detail, extensions?)    // 401
-returnForbidden(detail, extensions?)       // 403
-returnNotFound(detail, extensions?)        // 404
-returnConflict(detail, extensions?)        // 409
-returnInternalServerError(detail, extensions?) // 500
+ApiResponse.badRequest(detail, extensions?);        // 400
+ApiResponse.unauthorized(detail, extensions?);      // 401
+ApiResponse.forbidden(detail, extensions?);         // 403
+ApiResponse.notFound(detail, extensions?);          // 404
+ApiResponse.conflict(detail, extensions?);          // 409
+ApiResponse.internalServerError(detail, extensions?); // 500
 ```
 
 ### Example with Extensions
 
 ```typescript
-return returnNotFound('Resource not found', {
+return ApiResponse.notFound('Resource not found', {
   resourceType: 'User',
   resourceId: params.id,
   searchedAt: new Date().toISOString(),
@@ -197,7 +193,7 @@ return returnNotFound('Resource not found', {
 
 ## Common Error Classes
 
-Pre-built error classes in `$/app/error/CommonErrors.ts`:
+Pre-built error classes in `$/@frouvel/kaname/error/CommonErrors.ts`:
 
 - **ValidationError** - For validation failures (400)
 - **UnauthorizedError** - For authentication failures (401)

@@ -19,7 +19,8 @@
     "typecheck:server": "npm run typecheck --prefix backend-api",
     "lint": "concurrently --names=\"Frontend(Web),Backend(API)\" \"npm run lint:client\" \"npm run lint:server\" -c blue,cyan",
     "lint:client": "npm run lint --prefix frontend-web",
-    "lint:server": "npm run lint --prefix backend-api"
+    "lint:server": "npm run lint --prefix backend-api",
+    "artisan": "npm run artisan --prefix backend-api"
   },
   "author": "",
   "license": "ISC",

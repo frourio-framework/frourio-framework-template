@@ -24,24 +24,24 @@ The `f-f` includes a variety of composable functions and several best practices 
 The [`ApiResponse`](backend-api/@frouvel/kaname/http/ApiResponse.ts:284) facade provides a unified API for creating HTTP responses:
 
 ```ts
-import { ApiResponse } from '$/@frouvel/kaname/http/ApiResponse';
+import { ApiResponse } from "$/@frouvel/kaname/http/ApiResponse";
 
 // Success response
-ApiResponse.success({ id: 1, name: 'John' });
+ApiResponse.success({ id: 1, name: "John" });
 
 // Error responses
-ApiResponse.notFound('User not found', { userId: '123' });
-ApiResponse.badRequest('Invalid input', { field: 'email' });
-ApiResponse.unauthorized('Invalid token');
-ApiResponse.forbidden('Insufficient permissions');
-ApiResponse.conflict('User already exists');
-ApiResponse.internalServerError('Database error');
+ApiResponse.notFound("User not found", { userId: "123" });
+ApiResponse.badRequest("Invalid input", { field: "email" });
+ApiResponse.unauthorized("Invalid token");
+ApiResponse.forbidden("Insufficient permissions");
+ApiResponse.conflict("User already exists");
+ApiResponse.internalServerError("Database error");
 
 // Method-specific error handlers
-ApiResponse.method.get(error);    // 404 default
-ApiResponse.method.post(error);   // 500 default
-ApiResponse.method.put(error);    // 500 default
-ApiResponse.method.patch(error);  // 403 default
+ApiResponse.method.get(error); // 404 default
+ApiResponse.method.post(error); // 500 default
+ApiResponse.method.put(error); // 500 default
+ApiResponse.method.patch(error); // 403 default
 ApiResponse.method.delete(error); // 500 default
 ```
 
@@ -50,22 +50,22 @@ ApiResponse.method.delete(error); // 500 default
 The [`ResponseBuilder`](backend-api/@frouvel/kaname/http/ResponseBuilder.ts:28) provides a fluent API for validation and response creation:
 
 ```ts
-import { ResponseBuilder } from '$/@frouvel/kaname/http/ApiResponse';
-import { z } from 'zod';
+import { ResponseBuilder } from "$/@frouvel/kaname/http/ApiResponse";
+import { z } from "zod";
 
 // Pattern 1: .handle() - Full control over response
 ResponseBuilder.create()
-  .withValidation(body, userSchema)
+  .withZodValidation(body, userSchema)
   .handle((data) => {
     if (data.age < 18) {
-      return ApiResponse.forbidden('未成年は登録できません');
+      return ApiResponse.forbidden("未成年は登録できません");
     }
     return ApiResponse.success(data);
   });
 
 // Pattern 2: .then() - Alias for .handle()
 ResponseBuilder.create()
-  .withValidation(body, userSchema)
+  .withZodValidation(body, userSchema)
   .then((data) => {
     // Same as .handle()
     return ApiResponse.success(data);
@@ -73,13 +73,13 @@ ResponseBuilder.create()
 
 // Pattern 3: .executeWithSuccess() - Auto-wraps in success response
 ResponseBuilder.create()
-  .withValidation(body, userSchema)
+  .withZodValidation(body, userSchema)
   .executeWithSuccess((data) => {
     if (data.age < 18) {
-      return ApiResponse.forbidden('未成年です');
+      return ApiResponse.forbidden("未成年です");
     }
     // No need to return ApiResponse.success(), it's automatic
-    return { message: 'Success', data };
+    return { message: "Success", data };
   });
 ```
 
@@ -88,18 +88,18 @@ ResponseBuilder.create()
 Structured error classes that automatically convert to RFC9457 Problem Details:
 
 ```ts
-import { 
-  NotFoundError, 
-  ValidationError, 
-  UnauthorizedError 
-} from '$/@frouvel/kaname/error/CommonErrors';
+import {
+  NotFoundError,
+  ValidationError,
+  UnauthorizedError,
+} from "$/@frouvel/kaname/error/CommonErrors";
 
 // Throw structured errors
-throw NotFoundError.create('User not found', { userId: '123' });
-throw ValidationError.create('Invalid input', { 
-  errors: [{ field: 'email', message: 'Invalid format' }] 
+throw NotFoundError.create("User not found", { userId: "123" });
+throw ValidationError.create("Invalid input", {
+  errors: [{ field: "email", message: "Invalid format" }],
 });
-throw UnauthorizedError.create('Invalid token', { reason: 'Expired' });
+throw UnauthorizedError.create("Invalid token", { reason: "Expired" });
 ```
 
 ### `f-f` file structure
@@ -118,9 +118,9 @@ Modern controller patterns using `@frouvel/kaname`:
 **Pattern 1: Simple UseCase with error handling**
 
 ```ts
-import { ApiResponse } from '$/@frouvel/kaname/http/ApiResponse';
-import { FindUserUseCase } from '$/domain/user/usecase/FindUser.usecase';
-import { defineController } from './$relay';
+import { ApiResponse } from "$/@frouvel/kaname/http/ApiResponse";
+import { FindUserUseCase } from "$/domain/user/usecase/FindUser.usecase";
+import { defineController } from "./$relay";
 
 export default defineController(() => ({
   get: ({ params }) =>
@@ -134,10 +134,13 @@ export default defineController(() => ({
 **Pattern 2: With validation using ResponseBuilder**
 
 ```ts
-import { ApiResponse, ResponseBuilder } from '$/@frouvel/kaname/http/ApiResponse';
-import { CreateUserUseCase } from '$/domain/user/usecase/CreateUser.usecase';
-import { defineController } from './$relay';
-import { z } from 'zod';
+import {
+  ApiResponse,
+  ResponseBuilder,
+} from "$/@frouvel/kaname/http/ApiResponse";
+import { CreateUserUseCase } from "$/domain/user/usecase/CreateUser.usecase";
+import { defineController } from "./$relay";
+import { z } from "zod";
 
 const createUserSchema = z.object({
   name: z.string().min(1),
@@ -148,15 +151,15 @@ const createUserSchema = z.object({
 export default defineController(() => ({
   post: ({ body }) =>
     ResponseBuilder.create()
-      .withValidation(body, createUserSchema)
+      .withZodValidation(body, createUserSchema)
       .handle((data) => {
         if (data.age < 18) {
-          return ApiResponse.forbidden('未成年は登録できません', {
+          return ApiResponse.forbidden("未成年は登録できません", {
             minAge: 18,
             providedAge: data.age,
           });
         }
-        
+
         return CreateUserUseCase.create()
           .handle(data)
           .then(ApiResponse.success)
@@ -168,10 +171,10 @@ export default defineController(() => ({
 **Pattern 3: Multiple operations with pagination**
 
 ```ts
-import { ApiResponse } from '$/@frouvel/kaname/http/ApiResponse';
-import { PaginateUsersUseCase } from '$/domain/user/usecase/PaginateUsers.usecase';
-import { CreateUserUseCase } from '$/domain/user/usecase/CreateUser.usecase';
-import { defineController } from './$relay';
+import { ApiResponse } from "$/@frouvel/kaname/http/ApiResponse";
+import { PaginateUsersUseCase } from "$/domain/user/usecase/PaginateUsers.usecase";
+import { CreateUserUseCase } from "$/domain/user/usecase/CreateUser.usecase";
+import { defineController } from "./$relay";
 
 export default defineController(() => ({
   get: ({ query }) =>
@@ -183,7 +186,7 @@ export default defineController(() => ({
       })
       .then(ApiResponse.success)
       .catch(ApiResponse.method.get),
-      
+
   post: ({ body }) =>
     CreateUserUseCase.create()
       .handle({
@@ -199,18 +202,18 @@ export default defineController(() => ({
 **Pattern 4: Direct response without UseCase**
 
 ```ts
-import { ApiResponse } from '$/@frouvel/kaname/http/ApiResponse';
-import { defineController } from './$relay';
+import { ApiResponse } from "$/@frouvel/kaname/http/ApiResponse";
+import { defineController } from "./$relay";
 
 export default defineController(() => ({
-  get: () => ApiResponse.success({ message: 'Health check OK' }),
-  
+  get: () => ApiResponse.success({ message: "Health check OK" }),
+
   delete: ({ params }) => {
     // Direct business logic
     if (!canDelete(params.id)) {
-      return ApiResponse.forbidden('Cannot delete this resource');
+      return ApiResponse.forbidden("Cannot delete this resource");
     }
-    
+
     deleteResource(params.id);
     return ApiResponse.success({ deleted: true });
   },
@@ -225,8 +228,8 @@ export default defineController(() => ({
 - typical index.ts example given below
 
 ```ts
-import type { DefineMethods } from 'aspida';
-import type { ProblemDetails } from 'commonTypesWithClient';
+import type { DefineMethods } from "aspida";
+import type { ProblemDetails } from "commonTypesWithClient";
 
 export type Methods = DefineMethods<{
   get: {
@@ -239,15 +242,17 @@ export type Methods = DefineMethods<{
 ```
 
 ```ts
-import { UserModelDto } from 'commonTypesWithClient';
-import type { DefineMethods } from 'aspida';
-import type { ProblemDetails } from 'commonTypesWithClient';
+import { UserModelDto } from "commonTypesWithClient";
+import type { DefineMethods } from "aspida";
+import type { ProblemDetails } from "commonTypesWithClient";
 
 export type Methods = DefineMethods<{
   get: {
-    resBody: {
-      user: UserModelDto;
-    } | ProblemDetails;
+    resBody:
+      | {
+          user: UserModelDto;
+        }
+      | ProblemDetails;
   };
 }>;
 ```
@@ -257,8 +262,8 @@ import {
   PaginationMeta,
   UserModelDto,
   ProblemDetails,
-} from 'commonTypesWithClient';
-import type { DefineMethods } from 'aspida';
+} from "commonTypesWithClient";
+import type { DefineMethods } from "aspida";
 
 export type Methods = DefineMethods<{
   get: {
@@ -267,10 +272,12 @@ export type Methods = DefineMethods<{
       limit: number;
       searchValue?: string;
     };
-    resBody: {
-      data: UserModelDto[];
-      meta: PaginationMeta;
-    } | ProblemDetails;
+    resBody:
+      | {
+          data: UserModelDto[];
+          meta: PaginationMeta;
+        }
+      | ProblemDetails;
   };
   post: {
     reqBody: {
@@ -330,7 +337,7 @@ export type Methods = DefineMethods<{
 - example model look like this
 
 ```ts
-import { Prisma, User as PrismaUser } from '@prisma/client';
+import { Prisma, User as PrismaUser } from "@prisma/client";
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
@@ -441,10 +448,10 @@ export class UserModel {
 - **MUST** use [`createPaginationMeta`](backend-api/@frouvel/kaname/paginator/createPaginationMeta.ts:3) from `@frouvel/kaname/paginator` for pagination
 
 ```ts
-import { createPaginationMeta } from '$/@frouvel/kaname/paginator/createPaginationMeta';
-import { PaginationMeta } from 'commonTypesWithClient';
-import { UserModel } from '$/prisma/__generated__/models/User.model';
-import { PrismaClient } from '@prisma/client';
+import { createPaginationMeta } from "$/@frouvel/kaname/paginator/createPaginationMeta";
+import { PaginationMeta } from "commonTypesWithClient";
+import { UserModel } from "$/prisma/__generated__/models/User.model";
+import { PrismaClient } from "@prisma/client";
 
 export interface IUserRepository {
   create(args: {
@@ -528,7 +535,7 @@ export class UserRepository implements IUserRepository {
       where,
       take: args.limit,
       skip: args.limit * (args.page - 1),
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return {
@@ -560,8 +567,8 @@ export class UserRepository implements IUserRepository {
       - handleByUserId(args: {userId: string})
 
 ```ts
-import { IUserRepository, UserRepository } from '../repository/User.repository';
-import { getPrismaClient } from '$/service/getPrismaClient';
+import { IUserRepository, UserRepository } from "../repository/User.repository";
+import { getPrismaClient } from "$/@frouvel/kaname/database";
 
 export interface IValidateUserAgeService {
   handleByAge: (args: { age: number }) => Promise<boolean>;
@@ -604,9 +611,9 @@ export class ValidateUserAgeService implements IValidateUserAgeService {
 - follows same class coding rules as service
 
 ```ts
-import { NotFoundError } from '$/@frouvel/kaname/error/CommonErrors';
-import { getPrismaClient } from '$/service/getPrismaClient';
-import { IUserRepository, UserRepository } from '../repository/User.repository';
+import { NotFoundError } from "$/@frouvel/kaname/error/CommonErrors";
+import { getPrismaClient } from "$/@frouvel/kaname/database";
+import { IUserRepository, UserRepository } from "../repository/User.repository";
 
 export class FindUserUseCase {
   private readonly _userRepository: IUserRepository;
@@ -636,10 +643,13 @@ export class FindUserUseCase {
 ```
 
 ```ts
-import { ValidationError } from '$/@frouvel/kaname/error/CommonErrors';
-import { getPrismaClient } from '$/service/getPrismaClient';
-import { IUserRepository, UserRepository } from '../repository/User.repository';
-import { IValidateUserAgeService, ValidateUserAgeService } from '../service/ValidateUserAge.service';
+import { ValidationError } from "$/@frouvel/kaname/error/CommonErrors";
+import { getPrismaClient } from "$/@frouvel/kaname/database";
+import { IUserRepository, UserRepository } from "../repository/User.repository";
+import {
+  IValidateUserAgeService,
+  ValidateUserAgeService,
+} from "../service/ValidateUserAge.service";
 
 export class CreateUserUseCase {
   private readonly _userRepository: IUserRepository;
@@ -667,7 +677,7 @@ export class CreateUserUseCase {
     });
 
     if (!isValidAge) {
-      throw ValidationError.create('User age is below minimum requirement', {
+      throw ValidationError.create("User age is below minimum requirement", {
         minAge: 18,
         providedAge: args.age,
       });
@@ -684,27 +694,151 @@ export class CreateUserUseCase {
 }
 ```
 
+## Dependency Injection with Application Container
+
+The framework provides a Laravel-style Application container for proper dependency injection. This is the **recommended approach** for accessing Prisma and other services.
+
+### Accessing Application in Controllers
+
+Controllers can access the Application container through the Fastify instance using helper functions:
+
+```ts
+import { ApiResponse } from "$/@frouvel/kaname/http/ApiResponse";
+import { getApp, getPrisma } from "$/@frouvel/kaname/foundation";
+import { FindUserUseCase } from "$/domain/user/usecase/FindUser.usecase";
+import { defineController } from "./$relay";
+
+export default defineController((fastify) => ({
+  get: ({ params }) => {
+    const app = getApp(fastify); // Get Application container
+
+    return FindUserUseCase.create(app)
+      .handleById({ id: params.id })
+      .then(ApiResponse.success)
+      .catch(ApiResponse.method.get);
+  },
+}));
+```
+
+**Alternative: Direct Prisma access**
+
+```ts
+import { getPrisma } from "$/@frouvel/kaname/foundation";
+import { defineController } from "./$relay";
+
+export default defineController((fastify) => ({
+  get: () => {
+    const prisma = getPrisma(fastify); // Direct Prisma access
+    // Use for simple queries without UseCase
+  },
+}));
+```
+
+### Container-Based UseCase Pattern
+
+UseCases should receive the Application instance to access container-registered services:
+
+```ts
+import { NotFoundError } from "$/@frouvel/kaname/error/CommonErrors";
+import type { Application } from "$/@frouvel/kaname/foundation";
+import type { PrismaClient } from "@prisma/client";
+import { IUserRepository, UserRepository } from "../repository/User.repository";
+
+export class FindUserUseCase {
+  private readonly _userRepository: IUserRepository;
+
+  private constructor(args: { userRepository: IUserRepository }) {
+    this._userRepository = args.userRepository;
+  }
+
+  static create(app: Application) {
+    const prisma = app.make<PrismaClient>("prisma");
+    return new FindUserUseCase({
+      userRepository: new UserRepository(prisma),
+    });
+  }
+
+  async handleById(args: { id: number }) {
+    const user = await this._userRepository.findById({ id: args.id });
+
+    if (!user) {
+      throw NotFoundError.create(`User with ID ${args.id} not found`, {
+        userId: args.id,
+      });
+    }
+
+    return user.toDto();
+  }
+}
+```
+
+### Legacy Pattern (Not Recommended)
+
+The old pattern using `getPrismaClient()` directly still works but bypasses the container:
+
+```ts
+import { getPrismaClient } from '$/@frouvel/kaname/database';
+
+// ❌ Bypasses container - avoid in new code
+static create() {
+  return new FindUserUseCase({
+    userRepository: new UserRepository(getPrismaClient()),
+  });
+}
+```
+
+**Why avoid this?**
+
+- Bypasses the Application container
+- Harder to test (can't mock via container)
+- Inconsistent with framework architecture
+- Breaks the dependency injection pattern
+
+### Container-Registered Services
+
+The following services are available via the container:
+
+- `prisma` - [`PrismaClient`](backend-api/@frouvel/kaname/database/PrismaClientManager.ts) instance
+- `app` - Application instance itself
+- `HttpKernel` - HTTP request handler
+- `ConsoleKernel` - Console command handler
+- `fastify` - Fastify instance (when running HTTP server)
+- `config` - Configuration object (after LoadConfiguration bootstrapper)
+
+Example:
+
+```ts
+const app = getApp(fastify);
+const prisma = app.make<PrismaClient>("prisma");
+const config = app.make<Record<string, any>>("config");
+```
+
 ## Best Practices Summary
 
 ### Response Handling
+
 - **MUST** use [`ApiResponse`](backend-api/@frouvel/kaname/http/ApiResponse.ts:284) facade for all controller responses
 - **SHOULD** use [`ResponseBuilder`](backend-api/@frouvel/kaname/http/ResponseBuilder.ts:28) for endpoints with complex validation
 - **MUST** use method-specific error handlers: `ApiResponse.method.get()`, `ApiResponse.method.post()`, etc.
 
 ### Error Handling
+
 - **SHOULD** throw structured errors from [`@frouvel/kaname/error`](backend-api/@frouvel/kaname/error/) in UseCases
 - **MUST** include relevant context in error details
 - All errors automatically convert to RFC9457 Problem Details format
 
 ### Type Definitions
+
 - **MUST** include [`ProblemDetails`](backend-api/commonTypesWithClient/ProblemDetails.types.ts) union type in all response types
 - **MUST** import shared types from `commonTypesWithClient`
 
 ### Pagination
+
 - **MUST** use [`createPaginationMeta`](backend-api/@frouvel/kaname/paginator/createPaginationMeta.ts:3) from `@frouvel/kaname/paginator`
 - **MUST** return `{ data: T[]; meta: PaginationMeta }` structure
 
 ### Class Patterns
+
 - Private fields: `private readonly _fieldName`
 - Private constructor with static `create()` factory method
 - Public execution methods: `handle()`, `handleById()`, `handleByUserId()`, etc.
@@ -718,6 +852,7 @@ The framework now includes a comprehensive database management module for Prisma
 **Location**: [`@frouvel/kaname/database/`](backend-api/@frouvel/kaname/database/)
 
 **Features**:
+
 - Connection pool management with configurable parameters
 - Automatic retry logic with exponential backoff
 - Graceful shutdown handling
@@ -725,16 +860,18 @@ The framework now includes a comprehensive database management module for Prisma
 - Connection reset capabilities
 
 **Usage**:
+
 ```ts
-import { getPrismaClient } from '$/@frouvel/kaname/database';
+import { getPrismaClient } from "$/@frouvel/kaname/database";
 
 const prisma = getPrismaClient();
 // Prisma client ready to use with connection pooling
 ```
 
 **Environment Variables**:
+
 - `DATABASE_CONNECTION_POOL_SIZE`: Max connections (default: 10)
-- `DATABASE_CONNECTION_TIMEOUT`: Timeout in seconds (default: 30)  
+- `DATABASE_CONNECTION_TIMEOUT`: Timeout in seconds (default: 30)
 - `DATABASE_POOL_TIMEOUT`: Pool timeout in seconds (default: 2)
 
 ### Framework Service Providers (`@frouvel/kaname/foundation/providers`)
@@ -750,7 +887,7 @@ The framework provides built-in service providers that handle core functionality
    - Handles database connection on boot
    - Implements graceful disconnection
 
-2. **ConsoleServiceProvider**:  Registers built-in console commands
+2. **ConsoleServiceProvider**: Registers built-in console commands
    - `config:cache` - Cache configuration for production
    - `config:clear` - Clear configuration cache
    - `generate:config-types` - Generate type-safe config types
@@ -759,12 +896,13 @@ The framework provides built-in service providers that handle core functionality
    - `tinker` - Interactive REPL with app context
 
 **Registration** ([`bootstrap/app.ts`](backend-api/bootstrap/app.ts)):
+
 ```ts
 import {
   Application,
   DatabaseServiceProvider,
   ConsoleServiceProvider,
-} from '$/@frouvel/kaname/foundation';
+} from "$/@frouvel/kaname/foundation";
 
 const providers = [
   DatabaseServiceProvider,
@@ -778,6 +916,7 @@ const providers = [
 **Unified CLI**: All console commands are now managed through a single `npm run artisan` interface.
 
 **Available Commands**:
+
 ```bash
 npm run artisan                    # List all commands
 npm run artisan config:cache       # Cache config
@@ -820,9 +959,10 @@ backend-api/
 **3-Step Process**:
 
 1. **Create command** in `app/console/YourCommand.ts`:
+
 ```ts
-import { Command } from '$/@frouvel/kaname/console/Command';
-import type { Application } from '$/@frouvel/kaname/foundation';
+import { Command } from "$/@frouvel/kaname/console/Command";
+import type { Application } from "$/@frouvel/kaname/foundation";
 
 export class YourCommand extends Command {
   constructor(app: Application) {
@@ -831,14 +971,10 @@ export class YourCommand extends Command {
 
   protected signature() {
     return {
-      name: 'your:command',
-      description: 'Your command description',
-      arguments: [
-        { name: 'arg', description: 'An argument', required: true }
-      ],
-      options: [
-        { flags: '-o, --option <value>', description: 'An option' }
-      ]
+      name: "your:command",
+      description: "Your command description",
+      arguments: [{ name: "arg", description: "An argument", required: true }],
+      options: [{ flags: "-o, --option <value>", description: "An option" }],
     };
   }
 
@@ -847,21 +983,23 @@ export class YourCommand extends Command {
     if (options.option) {
       this.line(`Option value: ${options.option}`);
     }
-    this.success('Done!');
+    this.success("Done!");
   }
 }
 ```
 
 2. **Import** in `app/providers/AppServiceProvider.ts`:
+
 ```ts
-import { YourCommand } from '$/app/console/YourCommand';
+import { YourCommand } from "$/app/console/YourCommand";
 ```
 
 3. **Register** in `AppServiceProvider.boot()`:
+
 ```ts
 async boot(app: Application): Promise<void> {
   const kernel = app.make<ConsoleKernel>('ConsoleKernel');
-  
+
   kernel.registerCommands([
     new YourCommand(app),
     // More commands...
@@ -874,11 +1012,13 @@ async boot(app: Application): Promise<void> {
 The framework includes standalone scripts for fast CI/CD builds:
 
 **Config Generation** ([`@frouvel/kaname/scripts/generate-config-types.ts`](backend-api/@frouvel/kaname/scripts/generate-config-types.ts)):
+
 - Generates `config/$types.ts` without app bootstrap
 - No database connection required
 - Fast execution (<1s)
 
 **NPM Scripts** ([`package.json`](backend-api/package.json)):
+
 ```json
 {
   "scripts": {
@@ -890,6 +1030,7 @@ The framework includes standalone scripts for fast CI/CD builds:
 ```
 
 **CI Workflow**:
+
 ```bash
 npm run generate    # Generates aspida, frourio, prisma, AND config types
 npm run typecheck   # All types available, no errors

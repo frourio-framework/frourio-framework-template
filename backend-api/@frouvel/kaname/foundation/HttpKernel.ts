@@ -108,10 +108,15 @@ export class HttpKernel extends Kernel {
     // Set up error handler
     this.setupErrorHandler(app);
 
+    // Attach Application instance to Fastify for DI access
+    app.decorate('app', this._app);
+
     // Register routes via Frourio
-    server(app, { basePath: process.env.API_BASE_PATH });
+    const appConfig = config('app');
+    server(app, { basePath: appConfig.apiBasePath });
 
     console.log('[HttpKernel] Fastify instance configured');
+    console.log('[HttpKernel] Application instance attached to Fastify');
 
     return app;
   }
@@ -159,7 +164,7 @@ export class HttpKernel extends Kernel {
 
     // JWT authentication
     await app.register(jwt, {
-      secret: process.env.API_JWT_SECRET ?? '',
+      secret: config<string>('jwt.secret'),
     });
 
     // Swagger/OpenAPI documentation

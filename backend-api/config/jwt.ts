@@ -5,35 +5,40 @@
  */
 
 import { z } from 'zod';
+import { defineConfig, type ConfigType } from '$/@frouvel/kaname/config';
+import { env } from '../env';
 
-export const jwtConfigSchema = z.object({
-  secret: z.string().min(1),
-  expiresIn: z.number().positive(),
-  refreshExpiresIn: z.number().positive(),
-  scope: z.object({
-    admin: z.tuple([z.literal('admin')]),
-    user: z.object({
-      default: z.tuple([z.literal('user')]),
+const jwtConfig = defineConfig({
+  schema: z.object({
+    secret: z.string().min(1),
+    expiresIn: z.number().positive(),
+    refreshExpiresIn: z.number().positive(),
+    scope: z.object({
+      admin: z.tuple([z.literal('admin')]),
+      user: z.object({
+        default: z.tuple([z.literal('user')]),
+      }),
     }),
+    algorithm: z.literal('HS256'),
+    issuer: z.string(),
+    audience: z.string(),
   }),
-  algorithm: z.literal('HS256'),
-  issuer: z.string(),
-  audience: z.string(),
-});
-
-export type JwtConfig = z.infer<typeof jwtConfigSchema>;
-
-export default jwtConfigSchema.parse({
-  secret: process.env.API_JWT_SECRET || 'your-secret-key-change-this-in-production',
-  expiresIn: Number(process.env.JWT_EXPIRES_IN || 86400),
-  refreshExpiresIn: Number(process.env.JWT_REFRESH_EXPIRES_IN || 604800),
-  scope: {
-    admin: ['admin'] as const,
-    user: {
-      default: ['user'] as const,
+  load: () => ({
+    secret: env.API_JWT_SECRET,
+    expiresIn: env.JWT_EXPIRES_IN,
+    refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
+    scope: {
+      admin: ['admin'] as ['admin'],
+      user: {
+        default: ['user'] as ['user'],
+      },
     },
-  },
-  algorithm: 'HS256' as const,
-  issuer: process.env.JWT_ISSUER || 'frourio-framework',
-  audience: process.env.JWT_AUDIENCE || 'frourio-framework-api',
+    algorithm: 'HS256' as const,
+    issuer: env.JWT_ISSUER,
+    audience: env.JWT_AUDIENCE,
+  }),
 });
+
+export type JwtConfig = ConfigType<typeof jwtConfig>;
+export const jwtConfigSchema = jwtConfig.schema;
+export default jwtConfig;

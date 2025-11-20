@@ -4,7 +4,8 @@ import util from 'util';
 import { exec } from 'child_process';
 import { getPrismaClient } from '$/@frouvel/kaname/database';
 import { env } from '$/env';
-import { init } from '$/service/app';
+import app from '$/bootstrap/app';
+import type { HttpKernel } from '$/@frouvel/kaname/foundation';
 
 let server: FastifyInstance;
 const prisma = getPrismaClient();
@@ -41,7 +42,8 @@ let isMigrated = false;
 beforeAll(async (info) => {
   if (unneededServer({ filepath: info.file.filepath })) return;
 
-  server = init();
+  const kernel = app.make<HttpKernel>('HttpKernel');
+  server = await kernel.handle();
   // since +1 is used for websocket, +11 is used for testing API server
   await server.listen({ port: env.API_SERVER_PORT + 11, host: '0.0.0.0' });
 

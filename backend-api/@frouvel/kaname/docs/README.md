@@ -55,8 +55,8 @@ export type Methods = DefineMethods<{
 **Backend (controller.ts):**
 
 ```typescript
-import { returnSuccess, returnGetError } from '$/app/http/response';
-import { NotFoundError } from '$/app/error/CommonErrors';
+import { ApiResponse } from '$/@frouvel/kaname/http/ApiResponse';
+import { NotFoundError } from '$/@frouvel/kaname/error/CommonErrors';
 
 export default defineController(() => ({
   get: ({ params }) => {
@@ -67,9 +67,9 @@ export default defineController(() => ({
           userId: params.id,
         });
       }
-      return returnSuccess(user);
+      return ApiResponse.success(user);
     } catch (error) {
-      return returnGetError(error);
+      return ApiResponse.method.get(error);
     }
   },
 }));
@@ -105,56 +105,61 @@ if (isApiSuccess(response)) {
 
 ```
 backend-api/
-├── app/
+├── @frouvel/kaname/
 │   ├── error/
 │   │   ├── FrourioFrameworkError.ts    # Base error class
 │   │   ├── CommonErrors.ts              # Pre-built error classes
 │   │   └── index.ts                     # Barrel export
-│   └── http/
-│       ├── rfc9457.types.ts             # Type definitions
-│       ├── rfc9457.response.ts          # Response helpers
-│       └── response.ts                  # Main exports
+│   ├── http/
+│   │   ├── ApiResponse.ts               # Main API response facade
+│   │   ├── ResponseBuilder.ts           # Fluent validation API
+│   │   └── type/
+│   │       └── nfc9457.ts               # RFC9457 type definitions
+│   └── docs/
+│       ├── RFC9457_QUICK_START.md       # Quick reference
+│       ├── RFC9457_ERROR_HANDLING.md    # Complete guide
+│       └── RFC9457_MIGRATION.md         # Migration guide
 ├── api/
 │   └── example-rfc9457/                 # Example implementation
-└── docs/
-    ├── RFC9457_QUICK_START.md           # Quick reference
-    ├── RFC9457_ERROR_HANDLING.md        # Complete guide
-    └── RFC9457_MIGRATION.md             # Migration guide
+└── commonTypesWithClient/
+    └── ProblemDetails.types.ts          # Shared with frontend
 ```
 
-### Available Response Helpers
+### ApiResponse Facade Methods
 
 ```typescript
-// Success
-returnSuccess(data)
+import { ApiResponse } from '$/@frouvel/kaname/http/ApiResponse';
 
-// Generic errors (auto-detect status from error type)
-returnGetError(error)      // Default: 404
-returnPostError(error)     // Default: 500
-returnPutError(error)      // Default: 500
-returnPatchError(error)    // Default: 403
-returnDeleteError(error)   // Default: 500
+// Success response
+ApiResponse.success(data)
 
-// Specific status codes
-returnBadRequest(detail, extensions?)       // 400
-returnUnauthorized(detail, extensions?)     // 401
-returnForbidden(detail, extensions?)        // 403
-returnNotFound(detail, extensions?)         // 404
-returnConflict(detail, extensions?)         // 409
-returnInternalServerError(detail, extensions?) // 500
+// Method-specific error handlers (auto-detect status from error type)
+ApiResponse.method.get(error)      // Default: 404
+ApiResponse.method.post(error)     // Default: 500
+ApiResponse.method.put(error)      // Default: 500
+ApiResponse.method.patch(error)    // Default: 403
+ApiResponse.method.delete(error)   // Default: 500
+
+// Specific status code methods
+ApiResponse.badRequest(detail, extensions?)        // 400
+ApiResponse.unauthorized(detail, extensions?)      // 401
+ApiResponse.forbidden(detail, extensions?)         // 403
+ApiResponse.notFound(detail, extensions?)          // 404
+ApiResponse.conflict(detail, extensions?)          // 409
+ApiResponse.internalServerError(detail, extensions?) // 500
 ```
 
 ### Available Error Classes
 
 ```typescript
 import {
-  ValidationError, // 400 - Validation failures
-  UnauthorizedError, // 401 - Authentication failures
-  ForbiddenError, // 403 - Authorization failures
-  NotFoundError, // 404 - Resource not found
-  BadRequestError, // 400 - Malformed requests
-  InternalServerError, // 500 - Unexpected errors
-} from '$/app/error/CommonErrors';
+  ValidationError,      // 400 - Validation failures
+  UnauthorizedError,    // 401 - Authentication failures
+  ForbiddenError,       // 403 - Authorization failures
+  NotFoundError,        // 404 - Resource not found
+  BadRequestError,      // 400 - Malformed requests
+  InternalServerError,  // 500 - Unexpected errors
+} from '$/@frouvel/kaname/error/CommonErrors';
 ```
 
 ### Getting Started

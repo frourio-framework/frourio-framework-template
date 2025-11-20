@@ -15,10 +15,24 @@ import type { ConsoleKernel } from '$/@frouvel/kaname/foundation';
 import { ExampleCommand } from '$/app/console/ExampleCommand';
 import { GenerateOpenApiCommand } from '$/app/console/GenerateOpenApiCommand';
 
+// Import repositories
+import type { IUserRepository } from '$/domain/user/repository/User.repository.interface';
+import { UserRepository } from '$/domain/user/repository/prisma/User.repository';
+
+// Import use cases
+import { PaginateUserUsecase } from '$/domain/user/usecase/PaginateUser.usecase';
+
 export class AppServiceProvider implements ServiceProvider {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   register(app: Application): void {
-    // Register any application services here
+    // Bind IUserRepository to Prisma implementation
+    app.bind<IUserRepository>('IUserRepository', () => new UserRepository());
+
+    // Bind UseCases with dependency injection
+    app.bind<PaginateUserUsecase>('PaginateUserUsecase', () => {
+      const userRepository = app.make<IUserRepository>('IUserRepository');
+      return new PaginateUserUsecase(userRepository);
+    });
+
     console.log('[AppServiceProvider] Application services registered');
   }
 
